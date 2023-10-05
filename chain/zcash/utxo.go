@@ -4,11 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io"
-	"math"
-	"math/big"
-
-	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -16,6 +11,8 @@ import (
 	"github.com/pranav292gpt/zecutil/api/utxo"
 	"github.com/pranav292gpt/zecutil/chain/bitcoin"
 	"github.com/renproject/pack"
+	"io"
+	"math"
 )
 
 // Version of Zcash transactions supported by the multichain.
@@ -184,36 +181,40 @@ func (tx *Tx) Sighashes() ([]pack.Bytes32, error) {
 // Sign consumes a list of signatures, and adds them to the list of UTXOs in
 // the underlying transactions.
 func (tx *Tx) Sign(signatures []pack.Bytes65, pubKey pack.Bytes) error {
-	if tx.signed {
-		return fmt.Errorf("already signed")
-	}
-	if len(signatures) != len(tx.msgTx.TxIn) {
-		return fmt.Errorf("expected %v signatures, got %v signatures", len(tx.msgTx.TxIn), len(signatures))
-	}
-
-	for i, rsv := range signatures {
-		r := new(big.Int).SetBytes(rsv[:32])
-		s := new(big.Int).SetBytes(rsv[32:64])
-		signature := btcec.Signature{
-			R: r,
-			S: s,
-		}
-
-		builder := txscript.NewScriptBuilder()
-		builder.AddData(append(signature.Serialize(), byte(txscript.SigHashAll)))
-		builder.AddData(pubKey)
-		if tx.inputs[i].SigScript != nil {
-			builder.AddData(tx.inputs[i].SigScript)
-		}
-		signatureScript, err := builder.Script()
-		if err != nil {
-			return err
-		}
-		tx.msgTx.TxIn[i].SignatureScript = signatureScript
-	}
-	tx.signed = true
 	return nil
 }
+
+//func (tx *Tx) Sign(signatures []pack.Bytes65, pubKey pack.Bytes) error {
+//	if tx.signed {
+//		return fmt.Errorf("already signed")
+//	}
+//	if len(signatures) != len(tx.msgTx.TxIn) {
+//		return fmt.Errorf("expected %v signatures, got %v signatures", len(tx.msgTx.TxIn), len(signatures))
+//	}
+//
+//	for i, rsv := range signatures {
+//		r := new(big.Int).SetBytes(rsv[:32])
+//		s := new(big.Int).SetBytes(rsv[32:64])
+//		signature := btcec.Signature{
+//			R: r,
+//			S: s,
+//		}
+//
+//		builder := txscript.NewScriptBuilder()
+//		builder.AddData(append(signature.Serialize(), byte(txscript.SigHashAll)))
+//		builder.AddData(pubKey)
+//		if tx.inputs[i].SigScript != nil {
+//			builder.AddData(tx.inputs[i].SigScript)
+//		}
+//		signatureScript, err := builder.Script()
+//		if err != nil {
+//			return err
+//		}
+//		tx.msgTx.TxIn[i].SignatureScript = signatureScript
+//	}
+//	tx.signed = true
+//	return nil
+//}
 
 // Serialize serializes the UTXO transaction to bytes.
 func (tx *Tx) Serialize() (pack.Bytes, error) {
@@ -367,7 +368,7 @@ func calculateSighash(
 	// If anyone can pay isn't active, then we can use the cached
 	// hashPrevOuts, otherwise we just write zeroes for the prev outs.
 	if hashType&txscript.SigHashAnyOneCanPay == 0 {
-		sigHash.Write(sigHashes.HashPrevOuts[:])
+		sigHash.Write(sigHashes.HashPrevOutsV0[:])
 	} else {
 		sigHash.Write(zeroHash[:])
 	}
@@ -379,7 +380,7 @@ func calculateSighash(
 	if hashType&txscript.SigHashAnyOneCanPay == 0 &&
 		hashType&sighashMask != txscript.SigHashSingle &&
 		hashType&sighashMask != txscript.SigHashNone {
-		sigHash.Write(sigHashes.HashSequence[:])
+		sigHash.Write(sigHashes.HashPrevOutsV0[:])
 	} else {
 		sigHash.Write(zeroHash[:])
 	}
@@ -390,7 +391,7 @@ func calculateSighash(
 	// we'll serialize and add only the target output index to the signature
 	// pre-image.
 	if hashType&sighashMask != txscript.SigHashSingle && hashType&sighashMask != txscript.SigHashNone {
-		sigHash.Write(sigHashes.HashOutputs[:])
+		sigHash.Write(sigHashes.HashOutputsV0[:])
 	} else if hashType&sighashMask == txscript.SigHashSingle && idx < len(tx.TxOut) {
 		var (
 			b bytes.Buffer
@@ -511,15 +512,15 @@ func sighashKey(activationHeight uint32, network *Params) []byte {
 func txSighashes(tx *wire.MsgTx) (h *txscript.TxSigHashes, err error) {
 	h = &txscript.TxSigHashes{}
 
-	if h.HashPrevOuts, err = calculateHashPrevOuts(tx); err != nil {
+	if h.HashPrevOutsV0, err = calculateHashPrevOuts(tx); err != nil {
 		return
 	}
 
-	if h.HashSequence, err = calculateHashSequence(tx); err != nil {
+	if h.HashSequenceV0, err = calculateHashSequence(tx); err != nil {
 		return
 	}
 
-	if h.HashOutputs, err = calculateHashOutputs(tx); err != nil {
+	if h.HashOutputsV0, err = calculateHashOutputs(tx); err != nil {
 		return
 	}
 
