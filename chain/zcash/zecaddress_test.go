@@ -11,7 +11,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/pranav292gpt/zecutil/address"
 	"github.com/pranav292gpt/zecutil/chain/zcash"
-	"github.com/renproject/id"
 )
 
 var _ = Describe("Zcash Address", func() {
@@ -19,7 +18,7 @@ var _ = Describe("Zcash Address", func() {
 		addrEncodeDecoder := zcash.NewAddressEncodeDecoder(&zcash.RegressionNetParams)
 
 		It("addr pub key hash", func() {
-			pk := id.NewPrivKey()
+			pk, _ := btcec.NewPrivateKey()
 			wif, err := btcutil.NewWIF((*btcec.PrivateKey)(pk), zcash.RegressionNetParams.Params, true)
 			Expect(err).NotTo(HaveOccurred())
 			addrPubKeyHash, err := zcash.NewAddressPubKeyHash(btcutil.Hash160(wif.PrivKey.PubKey().SerializeUncompressed()), &zcash.RegressionNetParams)
@@ -58,7 +57,7 @@ var _ = Describe("Zcash Address", func() {
 
 			for i, param := range params {
 				// Generate a P2PKH address with the params
-				pk := id.NewPrivKey()
+				pk, _ := btcec.NewPrivateKey()
 				wif, err := btcutil.NewWIF((*btcec.PrivateKey)(pk), param.Params, true)
 				Expect(err).NotTo(HaveOccurred())
 				addrPubKeyHash, err := zcash.NewAddressPubKeyHash(btcutil.Hash160(wif.PrivKey.PubKey().SerializeUncompressed()), &param)

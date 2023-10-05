@@ -22,7 +22,6 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/ethereum/go-ethereum v1.10.23 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/renproject/surge v1.2.5 // indirect
 	golang.org/x/net v0.4.0 // indirect
