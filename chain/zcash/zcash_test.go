@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/pranav292gpt/zecutil/address"
 	"github.com/pranav292gpt/zecutil/api/utxo"
 	"github.com/pranav292gpt/zecutil/chain/zcash"
@@ -81,7 +81,7 @@ var _ = Describe("Zcash", func() {
 				Expect(err).ToNot(HaveOccurred())
 				for i := range sighashes {
 					hash := id.Hash(sighashes[i])
-					privKey := (*id.PrivKey)(wif.PrivKey)
+					privKey := (*id.PrivKey)(wif.PrivKey.ToECDSA())
 					signature, err := privKey.Sign(&hash)
 					Expect(err).ToNot(HaveOccurred())
 					signatures[i] = pack.NewBytes65(signature)

@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcutil"
 	"github.com/pranav292gpt/zecutil/address"
 	"github.com/pranav292gpt/zecutil/api/utxo"
 	"github.com/renproject/pack"
